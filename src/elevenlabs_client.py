@@ -6,7 +6,7 @@ import asyncio
 import json
 import logging
 import os
-from typing import Dict, List, Optional, Any
+from typing import AsyncGenerator, Dict, List, Optional, Any
 from pathlib import Path
 
 import httpx
@@ -90,6 +90,77 @@ class ElevenLabsClient:
         except httpx.HTTPError as e:
             logger.error(f"Failed to generate speech: {e}")
             return None
+
+    async def stream_speech(
+        self,
+        text: str,
+        voice_id: str,
+        model_id: str = "eleven_monolingual_v1",
+        voice_settings: Optional[Dict[str, Any]] = None
+    ) -> AsyncGenerator[bytes, None]:
+        """Stream speech audio chunks from ElevenLabs."""
+        payload = {
+            "text": text,
+            "model_id": model_id,
+            "voice_settings": voice_settings or {
+                "stability": 0.5,
+                "similarity_boost": 0.5
+            }
+        }
+        async with self.client.stream(
+            "POST",
+            f"/v1/text-to-speech/{voice_id}/stream",
+            json=payload,
+            headers={"Accept": "audio/mpeg"}
+        ) as response:
+            response.raise_for_status()
+            async for chunk in response.aiter_bytes(chunk_size=4096):
+                if chunk:
+                    yield chunk
+
+    async def clone_voice(
+        self,
+        name: str,
+        audio_file_paths: List[str],
+        description: str = ""
+    ) -> Optional[str]:
+        """Clone a voice from audio samples. Returns the new voice_id."""
+        file_handles = []
+        try:
+            files = []
+            for path in audio_file_paths:
+                f = open(path, "rb")
+                file_handles.append(f)
+                files.append(("files", (Path(path).name, f, "audio/mpeg")))
+
+            async with httpx.AsyncClient(
+                base_url=self.BASE_URL,
+                headers={"xi-api-key": self.api_key},
+                timeout=60.0
+            ) as client:
+                response = await client.post(
+                    "/v1/voices/add",
+                    data={"name": name, "description": description},
+                    files=files
+                )
+            response.raise_for_status()
+            return response.json().get("voice_id")
+        except Exception as e:
+            logger.error(f"Failed to clone voice: {e}")
+            return None
+        finally:
+            for f in file_handles:
+                f.close()
+
+    async def delete_voice(self, voice_id: str) -> bool:
+        """Delete a cloned voice."""
+        try:
+            response = await self.client.delete(f"/v1/voices/{voice_id}")
+            response.raise_for_status()
+            return True
+        except httpx.HTTPError as e:
+            logger.error(f"Failed to delete voice {voice_id}: {e}")
+            return False
 
     async def get_models(self) -> List[Dict[str, Any]]:
         """Get list of available models."""

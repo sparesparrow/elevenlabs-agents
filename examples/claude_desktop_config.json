@@ -1,0 +1,29 @@
+{
+  "_comment": "Multi-MCP composition example for Claude Desktop. Copy relevant sections into your ~/Library/Application Support/Claude/claude_desktop_config.json (macOS) or %APPDATA%/Claude/claude_desktop_config.json (Windows).",
+  "mcpServers": {
+    "elevenlabs-mia": {
+      "command": "elevenlabs-mcp-server",
+      "args": [],
+      "env": {
+        "ELEVENLABS_API_KEY": "YOUR_ELEVENLABS_API_KEY",
+        "MIA_HOST": "localhost",
+        "MIA_PORT": "8000"
+      }
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/home/user", "/tmp"]
+    },
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "YOUR_GITHUB_TOKEN"
+      }
+    },
+    "sqlite": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-sqlite", "--db-path", "/home/user/.elevenlabs-mia/history.db"]
+    }
+  }
+}
