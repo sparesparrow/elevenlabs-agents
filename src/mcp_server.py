@@ -6,19 +6,14 @@ import asyncio
 import json
 import logging
 import tempfile
-import os
-from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import httpx
-import websockets
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import (
     TextContent,
     Tool,
-    EmbeddedResource,
-    ImageContent,
 )
 from pydantic import BaseModel, Field
 
@@ -69,12 +64,16 @@ class GenerateSpeechFromProfile(BaseModel):
 class MIAVoiceCommand(BaseModel):
     """Execute a voice command for MIA IoT control."""
     command: str = Field(..., description="Voice command text (e.g., 'turn on the lights')")
-    voice_profile: Optional[str] = Field(default="default", description="Voice profile for response")
+    voice_profile: Optional[str] = Field(
+        default="default", description="Voice profile for response"
+    )
 
 
 class GetMIAStatus(BaseModel):
     """Get MIA system status with voice feedback."""
-    voice_profile: Optional[str] = Field(default="default", description="Voice profile for status readout")
+    voice_profile: Optional[str] = Field(
+        default="default", description="Voice profile for status readout"
+    )
 
 
 class StreamSpeech(BaseModel):
@@ -84,13 +83,17 @@ class StreamSpeech(BaseModel):
     model_id: Optional[str] = Field(default="eleven_monolingual_v1", description="Model ID to use")
     stability: Optional[float] = Field(default=0.5, description="Voice stability (0.0-1.0)")
     similarity_boost: Optional[float] = Field(default=0.5, description="Similarity boost (0.0-1.0)")
-    output_path: Optional[str] = Field(default=None, description="Optional path to save streamed audio")
+    output_path: Optional[str] = Field(
+        default=None, description="Optional path to save streamed audio"
+    )
 
 
 class CloneVoice(BaseModel):
     """Clone a voice from audio sample files."""
     name: str = Field(..., description="Name for the cloned voice")
-    audio_file_paths: List[str] = Field(..., description="List of audio file paths (mp3/wav) to use as samples")
+    audio_file_paths: List[str] = Field(
+        ..., description="List of audio file paths (mp3/wav) to use as samples"
+    )
     description: Optional[str] = Field(default="", description="Description of the voice")
 
 
@@ -201,7 +204,7 @@ async def serve(
                 ),
                 Tool(
                     name=ElevenLabsTools.CLONE_VOICE,
-                    description="Clone a voice from audio sample files using ElevenLabs voice cloning",
+                    description="Clone a voice from audio sample files using ElevenLabs",
                     inputSchema=CloneVoice.schema(),
                 ),
                 Tool(
@@ -245,7 +248,8 @@ async def serve(
                     case ElevenLabsTools.LIST_VOICES:
                         voices = await elevenlabs_client.get_voices()
                         voices_text = "\n".join([
-                            f"- {voice['name']} (ID: {voice['voice_id']}, Category: {voice.get('category', 'unknown')})"
+                            f"- {voice['name']} (ID: {voice['voice_id']},"
+                            f" Category: {voice.get('category', 'unknown')})"
                             for voice in voices
                         ])
                         return [TextContent(
@@ -293,7 +297,8 @@ async def serve(
 
                             return [TextContent(
                                 type="text",
-                                text=f"Speech generated successfully. Audio saved to: {temp_path}\nText: '{text}'"
+                                text=f"Speech generated successfully. Audio saved to: {temp_path}"
+                                     f"\nText: '{text}'"
                             )]
                         else:
                             return [TextContent(
@@ -428,7 +433,8 @@ async def serve(
 
                             return [TextContent(
                                 type="text",
-                                text=f"Speech generated from profile '{profile_name}'. Audio saved to: {temp_path}\nText: '{text}'"
+                                text=f"Speech generated from profile '{profile_name}'."
+                                     f" Audio saved to: {temp_path}\nText: '{text}'"
                             )]
                         else:
                             return [TextContent(
@@ -454,7 +460,8 @@ async def serve(
                         profile = voice_profiles.get_profile(voice_profile)
                         if profile:
                             audio_data = await elevenlabs_client.generate_speech(
-                                response_text, profile["voice_id"], "eleven_monolingual_v1", profile["settings"]
+                                response_text, profile["voice_id"],
+                                "eleven_monolingual_v1", profile["settings"]
                             )
                             if audio_data:
                                 with tempfile.NamedTemporaryFile(
@@ -493,7 +500,8 @@ async def serve(
                         profile = voice_profiles.get_profile(voice_profile)
                         if profile:
                             audio_data = await elevenlabs_client.generate_speech(
-                                status_text, profile["voice_id"], "eleven_monolingual_v1", profile["settings"]
+                                status_text, profile["voice_id"],
+                                "eleven_monolingual_v1", profile["settings"]
                             )
                             if audio_data:
                                 with tempfile.NamedTemporaryFile(

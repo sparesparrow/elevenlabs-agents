@@ -69,7 +69,7 @@ class TestElevenLabsClient:
         mock_response.raise_for_status.return_value = None
         client.client.post.return_value = mock_response
 
-        audio = await client.generate_speech(
+        await client.generate_speech(
             "Test", "voice-123", "model-456",
             {"stability": 0.8, "similarity_boost": 0.7}
         )
