@@ -7,7 +7,7 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import Any, AsyncGenerator, Dict, List, Optional
+from typing import Any, AsyncGenerator, Dict, List, Optional, cast
 
 import httpx
 
@@ -46,7 +46,7 @@ class ElevenLabsClient:
             response = await self.client.get("/v1/voices")
             response.raise_for_status()
             data = response.json()
-            return data.get("voices", [])
+            return cast(List[Dict[str, Any]], data.get("voices", []))
         except httpx.HTTPError as e:
             logger.error(f"Failed to get voices: {e}")
             return []
@@ -56,7 +56,7 @@ class ElevenLabsClient:
         try:
             response = await self.client.get(f"/v1/voices/{voice_id}")
             response.raise_for_status()
-            return response.json()
+            return cast(Dict[str, Any], response.json())
         except httpx.HTTPError as e:
             logger.error(f"Failed to get voice {voice_id}: {e}")
             return None
@@ -85,7 +85,7 @@ class ElevenLabsClient:
                 headers={"Accept": "audio/mpeg"}
             )
             response.raise_for_status()
-            return response.content
+            return bytes(response.content)
 
         except httpx.HTTPError as e:
             logger.error(f"Failed to generate speech: {e}")
@@ -135,7 +135,7 @@ class ElevenLabsClient:
 
             async with httpx.AsyncClient(
                 base_url=self.BASE_URL,
-                headers={"xi-api-key": self.api_key},
+                headers={"xi-api-key": self.api_key or ""},
                 timeout=60.0
             ) as client:
                 response = await client.post(
@@ -144,7 +144,7 @@ class ElevenLabsClient:
                     files=files
                 )
             response.raise_for_status()
-            return response.json().get("voice_id")
+            return cast(Optional[str], response.json().get("voice_id"))
         except Exception as e:
             logger.error(f"Failed to clone voice: {e}")
             return None
@@ -167,7 +167,7 @@ class ElevenLabsClient:
         try:
             response = await self.client.get("/v1/models")
             response.raise_for_status()
-            return response.json()
+            return cast(List[Dict[str, Any]], response.json())
         except httpx.HTTPError as e:
             logger.error(f"Failed to get models: {e}")
             return []
@@ -177,7 +177,7 @@ class ElevenLabsClient:
         try:
             response = await self.client.get("/v1/user")
             response.raise_for_status()
-            return response.json()
+            return cast(Dict[str, Any], response.json())
         except httpx.HTTPError as e:
             logger.error(f"Failed to get user info: {e}")
             return None
@@ -223,7 +223,7 @@ class VoiceProfileManager:
 
     def get_profile(self, name: str) -> Optional[Dict[str, Any]]:
         """Get a voice profile."""
-        return self.profiles.get(name)
+        return cast(Optional[Dict[str, Any]], self.profiles.get(name))
 
     def list_profiles(self) -> List[str]:
         """List all voice profile names."""

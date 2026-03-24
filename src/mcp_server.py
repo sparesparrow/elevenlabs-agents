@@ -6,7 +6,7 @@ import asyncio
 import json
 import logging
 import tempfile
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 import httpx
 from mcp.server import Server
@@ -146,7 +146,7 @@ class MIAVoiceIntegration:
 
             response = await self.client.post(f"{self.mia_base_url}/voice-command", json=payload)
             response.raise_for_status()
-            return response.json()
+            return cast(Dict[str, Any], response.json())
 
         except httpx.HTTPError as e:
             logger.error(f"Failed to execute voice command: {e}")
@@ -157,7 +157,7 @@ class MIAVoiceIntegration:
         try:
             response = await self.client.get(f"{self.mia_base_url}/status")
             response.raise_for_status()
-            return response.json()
+            return cast(Dict[str, Any], response.json())
         except httpx.HTTPError as e:
             logger.error(f"Failed to get MIA status: {e}")
             return {"error": f"Failed to get status: {e}"}
