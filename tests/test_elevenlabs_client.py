@@ -2,16 +2,16 @@
 Tests for ElevenLabs client functionality.
 """
 
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 import sys
 from pathlib import Path
+from unittest.mock import AsyncMock, MagicMock
+
+import pytest
 
 # Add src to path for imports
-src_path = Path(__file__).parent.parent / "src"
-sys.path.insert(0, str(src_path))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from elevenlabs_client import ElevenLabsClient, VoiceProfileManager
+from elevenlabs_client import ElevenLabsClient, VoiceProfileManager  # noqa: E402
 
 
 class TestElevenLabsClient:

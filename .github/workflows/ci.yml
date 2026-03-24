@@ -33,12 +33,9 @@ jobs:
       - name: Type check with mypy
         run: mypy src/ --ignore-missing-imports
 
-      - name: Run tests
-        run: pytest tests/ -v --tb=short
+      - name: Run tests with coverage
+        run: coverage run -m pytest tests/ -v --tb=short
 
-      - name: Upload coverage
+      - name: Coverage report
         if: matrix.python-version == '3.12'
-        run: |
-          pip install coverage
-          coverage run -m pytest tests/
-          coverage report --fail-under=60
+        run: coverage report --fail-under=60
