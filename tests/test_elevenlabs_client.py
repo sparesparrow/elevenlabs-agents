@@ -2,16 +2,16 @@
 Tests for ElevenLabs client functionality.
 """
 
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 import sys
 from pathlib import Path
+from unittest.mock import AsyncMock, MagicMock
+
+import pytest
 
 # Add src to path for imports
-src_path = Path(__file__).parent.parent / "src"
-sys.path.insert(0, str(src_path))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from elevenlabs_client import ElevenLabsClient, VoiceProfileManager
+from elevenlabs_client import ElevenLabsClient, VoiceProfileManager  # noqa: E402
 
 
 class TestElevenLabsClient:
@@ -69,7 +69,7 @@ class TestElevenLabsClient:
         mock_response.raise_for_status.return_value = None
         client.client.post.return_value = mock_response
 
-        audio = await client.generate_speech(
+        await client.generate_speech(
             "Test", "voice-123", "model-456",
             {"stability": 0.8, "similarity_boost": 0.7}
         )

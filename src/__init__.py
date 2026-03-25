@@ -4,9 +4,9 @@ ElevenLabs Agents - Voice integration for MIA IoT control system
 
 def main():
     """Main entry point for the ElevenLabs MCP server."""
+    import argparse
     import asyncio
     import sys
-    import argparse
     from pathlib import Path
 
     # Add the src directory to Python path
