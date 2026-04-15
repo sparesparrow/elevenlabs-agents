@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
+import httpx
 import pytest
 
 # Add src to path for imports
@@ -79,6 +80,73 @@ class TestElevenLabsClient:
         assert payload["model_id"] == "model-456"
         assert payload["voice_settings"]["stability"] == 0.8
         assert payload["voice_settings"]["similarity_boost"] == 0.7
+
+
+    @pytest.mark.asyncio
+    async def test_get_voices_returns_empty_on_http_error(self, client):
+        """HTTP failures in get_voices should be swallowed and return []."""
+        request = httpx.Request("GET", "https://api.elevenlabs.io/v1/voices")
+        response = httpx.Response(500, request=request)
+        client.client.get.side_effect = httpx.HTTPStatusError(
+            "server error", request=request, response=response
+        )
+
+        voices = await client.get_voices()
+        assert voices == []
+
+    @pytest.mark.asyncio
+    async def test_get_voice_returns_none_on_http_error(self, client):
+        client.client.get.side_effect = httpx.TimeoutException("timeout")
+
+        voice = await client.get_voice("voice-xyz")
+        assert voice is None
+
+    @pytest.mark.asyncio
+    async def test_generate_speech_returns_none_on_http_error(self, client):
+        request = httpx.Request("POST", "https://api.elevenlabs.io/v1/text-to-speech/v")
+        response = httpx.Response(401, request=request)
+        client.client.post.side_effect = httpx.HTTPStatusError(
+            "unauthorized", request=request, response=response
+        )
+
+        audio = await client.generate_speech("hi", "v")
+        assert audio is None
+
+    @pytest.mark.asyncio
+    async def test_delete_voice_returns_true_on_success(self, client):
+        mock_response = MagicMock()
+        mock_response.raise_for_status.return_value = None
+        client.client.delete.return_value = mock_response
+
+        ok = await client.delete_voice("voice-123")
+        assert ok is True
+        client.client.delete.assert_called_once_with("/v1/voices/voice-123")
+
+    @pytest.mark.asyncio
+    async def test_delete_voice_returns_false_on_http_error(self, client):
+        request = httpx.Request("DELETE", "https://api.elevenlabs.io/v1/voices/v")
+        response = httpx.Response(404, request=request)
+        client.client.delete.side_effect = httpx.HTTPStatusError(
+            "not found", request=request, response=response
+        )
+
+        ok = await client.delete_voice("v")
+        assert ok is False
+
+    @pytest.mark.asyncio
+    async def test_get_models_returns_empty_on_http_error(self, client):
+        client.client.get.side_effect = httpx.ConnectError("no route")
+        assert await client.get_models() == []
+
+    @pytest.mark.asyncio
+    async def test_get_user_info_returns_none_on_http_error(self, client):
+        client.client.get.side_effect = httpx.ConnectError("no route")
+        assert await client.get_user_info() is None
+
+    def test_constructor_raises_without_api_key(self, monkeypatch):
+        monkeypatch.delenv("ELEVENLABS_API_KEY", raising=False)
+        with pytest.raises(ValueError, match="API key not provided"):
+            ElevenLabsClient(api_key=None)
 
 
 class TestVoiceProfileManager:
