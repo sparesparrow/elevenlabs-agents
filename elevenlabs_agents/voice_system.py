@@ -26,6 +26,12 @@ class VoiceSystem:
                  elevenlabs_api_key: Optional[str] = None):
         self.preferred_engine = preferred_engine
         self.elevenlabs_api_key = elevenlabs_api_key or os.getenv('ELEVENLABS_API_KEY')
+        self._urgency_multipliers = {
+            "low": 0.8,
+            "normal": 1.0,
+            "high": 1.2,
+            "critical": 1.4
+        }
         self.available_engines = self._detect_available_engines()
         self.voice_engine = self._select_voice_engine()
         self.persona_configs = self._load_persona_configs()
@@ -157,14 +163,7 @@ class VoiceSystem:
         config = self.persona_configs[persona]
 
         # Adjust parameters based on urgency
-        urgency_multipliers = {
-            "low": 0.8,
-            "normal": 1.0,
-            "high": 1.2,
-            "critical": 1.4
-        }
-
-        multiplier = urgency_multipliers.get(urgency, 1.0)
+        multiplier = self._urgency_multipliers.get(urgency, 1.0)
         speed = int(config.speed * multiplier)
         volume = min(100, int(config.volume * multiplier))
 
